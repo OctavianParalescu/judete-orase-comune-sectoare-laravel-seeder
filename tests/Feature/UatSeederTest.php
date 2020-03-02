@@ -23,7 +23,7 @@ class UatSeederTest extends TestCase
         $this->artisan(
             'migrate:fresh',
             [
-                '--path' => 'vendor/octavianparalescu/judete-orase-comune-sectoare-laravel-seeder/',
+                '--path' => 'vendor/octavianparalescu/judete-orase-comune-sectoare-laravel-seeder/tests/migrations',
             ]
         );
 
@@ -36,7 +36,7 @@ class UatSeederTest extends TestCase
 
     public function createApplication()
     {
-        return require __DIR__ . '/../../bootstrap/app.php';
+        return require __DIR__ . '/../../../../../bootstrap/app.php';
     }
 
     public function testShouldImportCounties()
