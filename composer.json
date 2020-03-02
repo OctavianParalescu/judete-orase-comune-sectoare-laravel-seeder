@@ -1,0 +1,33 @@
+{
+    "name": "octavianparalescu/judete-orase-comune-sectoare-laravel-seeder",
+    "description": "Seeder for administrative territories (UAT - 'Unități Administrativ-Teritoriale) from Romania that uses wikidata",
+    "keywords": [
+        "laravel",
+        "uat",
+        "judete",
+        "comune",
+        "sectoare",
+        "seed",
+        "seeds",
+        "seeding"
+    ],
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Octavian Paralescu",
+            "email": "paralescuoctavian@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7",
+        "illuminate/support": ">=4.1.0",
+        "ext-json": "*",
+        "guzzlehttp/guzzle": "^6.2"
+    },
+    "autoload": {
+        "psr-0": {
+            "OctavianParalescu\\UatSeeder\\": "src/"
+        }
+    },
+    "minimum-stability": "dev"
+}
