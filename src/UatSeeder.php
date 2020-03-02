@@ -15,23 +15,7 @@ class UatSeeder extends Seeder
     const FLAG_SIRUTA = 'sirutaId';
     const FLAG_COORDS = 'coords';
     const FLAG_WEBSITE = 'website';
-    /**
-     * DB table name
-     * @var string
-     */
-    public $table;
-    /**
-     * An SQL INSERT query will execute every time this number of rows
-     * are read from the WikiData result. Without this, large INSERTS will silently
-     * fail.
-     * @var int
-     */
-    public $insertChunkSize = 50;
-    /**
-     * The mapping of WikiData to DB column.
-     * @var array
-     */
-    public $mapping = [];
+
     /**
      * @var WikiDataConverter
      */
@@ -54,7 +38,9 @@ class UatSeeder extends Seeder
      */
     public function run()
     {
-        $this->seed($this->table, $this->mapping, $this->insertChunkSize);
+        throw new \Exception(
+            'Cannot run seeder ' . self::class . ' with default properties, please use the seed method'
+        );
     }
 
     public function seed(string $table, array $mapping, int $insertChunkSize)
