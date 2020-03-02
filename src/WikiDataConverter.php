@@ -103,7 +103,9 @@ class WikiDataConverter
                     }
 
                     $data[$key][$to] = $var;
-                    unset($data[$key][$from]);
+                    if ($from !== $to) {
+                        unset($data[$key][$from]);
+                    }
                 } else {
                     throw new \Exception('[MAP] Could not find initial parameter name ' . $from);
                 }
