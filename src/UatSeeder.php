@@ -43,7 +43,7 @@ class UatSeeder extends Seeder
         );
     }
 
-    public function seed(string $table, array $mapping, int $insertChunkSize)
+    public function seed(string $table, array $mapping, int $insertChunkSize = 200)
     {
         // Create query
         $flags = array_keys($mapping);
