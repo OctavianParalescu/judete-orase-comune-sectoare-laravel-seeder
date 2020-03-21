@@ -20,22 +20,42 @@ class WikiDataRequestHandler
         $url = self::WIKIDATA_URL;
 
         $client = new Client();
-
         $headers = [
             'accept-encoding' => 'gzip, deflate',
         ];
-        $formParams = [
-            'query' => $sparqlQuery,
-        ];
-        $options = [
-            'headers' => $headers,
-            'form_params' => $formParams,
-        ];
-        $response = $client->request(
-            'POST',
-            $url,
-            $options
-        );
+
+        if (strlen($sparqlQuery) > 2000) {
+            // Post request for larger queries
+            $formParams = [
+                'query' => $sparqlQuery,
+            ];
+            $options = [
+                'headers' => $headers,
+                'form_params' => $formParams,
+            ];
+            $response = $client->request(
+                'POST',
+                $url,
+                $options
+            );
+        } else {
+            // Get request
+            $queryString = http_build_query(
+                [
+                    'query' => $sparqlQuery,
+                ]
+            );
+            $url .= "&$queryString";
+            $options = [
+                'headers' => $headers,
+            ];
+            $response = $client->request(
+                'GET',
+                $url,
+                $options
+            );
+        }
+
         $body = ($response)->getBody();
 
         file_put_contents($fileCache, $body);
