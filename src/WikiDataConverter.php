@@ -65,6 +65,18 @@ class WikiDataConverter
                         $where [] = 'OPTIONAL { ?town wdt:P856 ?website .}';
                     }
                 break;
+                case UatSeeder::FLAG_SATE:
+                {
+                    $select [] = '?sateLabel';
+                    $where []= 'OPTIONAL { ?town wdt:P1383 ?village .}';
+                }
+                break;
+                case UatSeeder::FLAG_SATE_COORDS:
+                    {
+                        $select [] = '?sateCoords';
+                        $where []= 'OPTIONAL { ?village wdt:P625 ?sateCoords .}';
+                    }
+                break;
             }
         }
 

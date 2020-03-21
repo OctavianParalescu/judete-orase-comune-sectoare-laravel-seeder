@@ -42,13 +42,14 @@ class UatSeederTest extends TestCase
     public function testShouldImportCounties()
     {
         $seeder = new UatSeeder(new WikiDataConverter(), new WikiDataRequestHandler());
-        $seeder->table = 'test_counties';
-        $seeder->mapping = [
-            'countySirutaId' => 'id',
-            'countyLabel' => 'name',
-            'typesOfCountiesLabel' => 'type',
-        ];
-        $seeder->run();
+        $seeder->seed(
+            'test_counties',
+            [
+                'countySirutaId' => 'id',
+                'countyLabel' => 'name',
+                'typesOfCountiesLabel' => 'type',
+            ]
+        );
 
         // Make sure the rows imported
         $this->assertDatabaseHas(
@@ -64,23 +65,25 @@ class UatSeederTest extends TestCase
     public function testShouldImportCitiesLinkedToCounties()
     {
         $seeder = new UatSeeder(new WikiDataConverter(), new WikiDataRequestHandler());
-        $seeder->table = 'test_counties';
-        $seeder->mapping = [
-            'countySirutaId' => 'id',
-            'countyLabel' => 'name',
-            'typesOfCountiesLabel' => 'type',
-        ];
-        $seeder->run();
+        $seeder->seed(
+            'test_counties',
+            [
+                'countySirutaId' => 'id',
+                'countyLabel' => 'name',
+                'typesOfCountiesLabel' => 'type',
+            ]
+        );
 
         $seeder = new UatSeeder(new WikiDataConverter(), new WikiDataRequestHandler());
-        $seeder->table = 'test_cities';
-        $seeder->mapping = [
-            'countySirutaId' => 'county_id',
-            'townLabel' => 'name',
-            'typesOfTownsLabel' => 'type',
-            'sirutaId' => 'id',
-        ];
-        $seeder->run();
+        $seeder->seed(
+            'test_cities',
+            [
+                'countySirutaId' => 'county_id',
+                'townLabel' => 'name',
+                'typesOfTownsLabel' => 'type',
+                'sirutaId' => 'id',
+            ]
+        );
 
         // Make sure the rows imported
         $this->assertDatabaseHas(
@@ -90,6 +93,49 @@ class UatSeederTest extends TestCase
                 'name' => 'Piatra Neamț',
                 'type' => 'municipiu',
                 'county_id' => 270,
+            ]
+        );
+    }
+
+    public function testShouldImportSateLinkedToCities()
+    {
+        $seeder = new UatSeeder(new WikiDataConverter(), new WikiDataRequestHandler());
+        $seeder->seed(
+            'test_counties',
+            [
+                'countySirutaId' => 'id',
+                'countyLabel' => 'name',
+                'typesOfCountiesLabel' => 'type',
+            ]
+        );
+
+        $seeder = new UatSeeder(new WikiDataConverter(), new WikiDataRequestHandler());
+        $seeder->seed(
+            'test_cities',
+            [
+                'countySirutaId' => 'county_id',
+                'townLabel' => 'name',
+                'typesOfTownsLabel' => 'type',
+                'sirutaId' => 'id',
+            ]
+        );
+
+        $seeder = new UatSeeder(new WikiDataConverter(), new WikiDataRequestHandler());
+        $seeder->seed(
+            'test_sate',
+            [
+                'countySirutaId' => 'county_id',
+                'sirutaId' => 'city_id',
+                'sateLabel' => 'name',
+                'sateCoords' => 'coords',
+            ]
+        );
+
+        // Make sure the rows imported
+        $this->assertDatabaseHas(
+            'test_sate',
+            [
+                'name' => 'Grigoreni',
             ]
         );
     }

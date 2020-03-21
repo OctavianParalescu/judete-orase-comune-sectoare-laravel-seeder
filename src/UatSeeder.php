@@ -15,7 +15,8 @@ class UatSeeder extends Seeder
     const FLAG_SIRUTA = 'sirutaId';
     const FLAG_COORDS = 'coords';
     const FLAG_WEBSITE = 'website';
-
+    const FLAG_SATE = 'sateLabel';
+    const FLAG_SATE_COORDS = 'sateCoords';
     /**
      * @var WikiDataConverter
      */

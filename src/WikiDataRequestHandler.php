@@ -27,7 +27,17 @@ class WikiDataRequestHandler
 
         $client = new Client();
 
-        $body = ($client->request('GET', $url))->getBody();
+        $headers = [
+            'accept-encoding' => 'gzip, deflate',
+        ];
+        $options = [
+            'headers' => $headers,
+        ];
+        $body = ($client->request(
+            'GET',
+            $url,
+            $options
+        ))->getBody();
 
         file_put_contents($fileCache, $body);
 
