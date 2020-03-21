@@ -1,45 +1,47 @@
 <?php
 
 
-namespace Tests\Feature;
+namespace OctavianParalescu\UatSeeder;
 
 
-use OctavianParalescu\UatSeeder\UatSeeder;
-use OctavianParalescu\UatSeeder\WikiDataRequestHandler;
-use PHPUnit\Framework\TestCase;
+use GuzzleHttp\Client;
 
-class WikiDataRequestHandlerTest extends TestCase
+class WikiDataRequestHandler
 {
+    const WIKIDATA_URL = 'https://query.wikidata.org/sparql?format=json';
 
-    public function testShouldOnlyRetrieveJudeteQuery()
+    public function retrieveWikiDataResults(string $sparqlQuery)
     {
-        $params = [UatSeeder::FLAG_JUDETE, UatSeeder::FLAG_JUDETE_SIRUTA];
+        $fileCache = __DIR__ . DIRECTORY_SEPARATOR . md5($sparqlQuery) . '.cache';
+        if (file_exists($fileCache)) {
+            return json_decode(file_get_contents($fileCache), true);
+        }
 
-        $object = new WikiDataRequestHandler();
+        $url = self::WIKIDATA_URL;
 
-        $query = 'SELECT DISTINCT ?countyLabel ?countySirutaId WHERE { SERVICE wikibase:label { bd:serviceParam wikibase:language "ro" . } .VALUES ?typesOfAdministrations { wd:Q1776764 wd:Q10864048 } .?county wdt:P131* wd:Q218 .?county wdt:P31 ?typesOfAdministrations .{?county wdt:P150 ?town} UNION {?county wdt:P1383 ?town} .OPTIONAL { ?county wdt:P843 ?countySirutaId .} }';
+        $client = new Client();
 
-        $result = $object->retrieveWikiDataResults($query);
+        $headers = [
+            'accept-encoding' => 'gzip, deflate',
+        ];
+        $formParams = [
+            'query' => $sparqlQuery,
+        ];
+        $options = [
+            'headers' => $headers,
+            'form_params' => $formParams,
+        ];
+        $response = $client->request(
+            'POST',
+            $url,
+            $options
+        );
+        $body = ($response)->getBody();
 
-        $this->assertArrayHasKey('head', $result);
-        $this->assertArrayHasKey('results', $result);
-        $this->assertArrayHasKey('bindings', $result['results']);
-        $this->assertCount(42, $result['results']['bindings']); // 42 total counties
-    }
+        file_put_contents($fileCache, $body);
 
-    public function testShouldOnlyRetrieveJudeteAndOraseComune()
-    {
-        $params = [UatSeeder::FLAG_JUDETE, UatSeeder::FLAG_JUDETE_SIRUTA, UatSeeder::FLAG_UAT];
+        $data = json_decode($body, true);
 
-        $object = new WikiDataRequestHandler();
-
-        $query = 'SELECT DISTINCT ?countyLabel ?countySirutaId ?townLabel WHERE { SERVICE wikibase:label { bd:serviceParam wikibase:language "ro" . } .VALUES ?typesOfAdministrations { wd:Q1776764 wd:Q10864048 } .?county wdt:P131* wd:Q218 .?county wdt:P31 ?typesOfAdministrations .{?county wdt:P150 ?town} UNION {?county wdt:P1383 ?town} .OPTIONAL { ?county wdt:P843 ?countySirutaId .} }';
-
-        $result = $object->retrieveWikiDataResults($query);
-
-        $this->assertArrayHasKey('head', $result);
-        $this->assertArrayHasKey('results', $result);
-        $this->assertArrayHasKey('bindings', $result['results']);
-        $this->assertEquals(3186, count($result['results']['bindings'])); // 3186 uats without judete and bucharest
+        return $data;
     }
 }
