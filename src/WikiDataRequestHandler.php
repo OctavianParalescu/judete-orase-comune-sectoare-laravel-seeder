@@ -8,38 +8,61 @@ use GuzzleHttp\Client;
 
 class WikiDataRequestHandler
 {
-    const WIKIDATA_URL = 'https://query.wikidata.org/sparql?';
+    const WIKIDATA_URL = 'https://query.wikidata.org/sparql?format=json';
 
-    public function retrieveWikiDataResults(string $sparqlQuery)
+    public function retrieveWikiDataResults(string $sparqlQuery, bool $isCacheEnabled = true)
     {
-        $fileCache = __DIR__ . DIRECTORY_SEPARATOR . md5($sparqlQuery) . '.cache';
-        if (file_exists($fileCache)) {
-            return json_decode(file_get_contents($fileCache), true);
+        if ($isCacheEnabled) {
+            $fileCache = __DIR__ . DIRECTORY_SEPARATOR . md5($sparqlQuery) . '.cache';
+            if (file_exists($fileCache)) {
+                return json_decode(file_get_contents($fileCache), true);
+            }
         }
-        $query = http_build_query(
-            [
-                'format' => 'json',
-                'query' => $sparqlQuery,
-            ]
-        );
 
-        $url = self::WIKIDATA_URL . $query;
+        $url = self::WIKIDATA_URL;
 
         $client = new Client();
-
         $headers = [
             'accept-encoding' => 'gzip, deflate',
         ];
-        $options = [
-            'headers' => $headers,
-        ];
-        $body = ($client->request(
-            'GET',
-            $url,
-            $options
-        ))->getBody();
 
-        file_put_contents($fileCache, $body);
+        if (strlen($sparqlQuery) > 2000 || !$isCacheEnabled) {
+            // Post request for larger queries
+            $formParams = [
+                'query' => $sparqlQuery,
+            ];
+            $options = [
+                'headers' => $headers,
+                'form_params' => $formParams,
+            ];
+            $response = $client->request(
+                'POST',
+                $url,
+                $options
+            );
+        } else {
+            // Get request
+            $queryString = http_build_query(
+                [
+                    'query' => $sparqlQuery,
+                ]
+            );
+            $url .= "&$queryString";
+            $options = [
+                'headers' => $headers,
+            ];
+            $response = $client->request(
+                'GET',
+                $url,
+                $options
+            );
+        }
+
+        $body = ($response)->getBody();
+
+        if ($isCacheEnabled) {
+            file_put_contents($fileCache, $body);
+        }
 
         $data = json_decode($body, true);
 

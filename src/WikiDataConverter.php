@@ -6,18 +6,45 @@ namespace OctavianParalescu\UatSeeder;
 
 class WikiDataConverter
 {
-    public function buildQuery(array $params)
+    const TYPES_OF_TOWNS_QUERY = '{?county wdt:P150 ?town} UNION {?county wdt:P1383 ?town}';
+    const COUNTY_SIRUTA_ID_QUERY = 'OPTIONAL { ?county wdt:P843 ?countySirutaId .}';
+
+    public function buildQuery(array $params, $countySirutaFilter = null)
     {
-        $select = [];
-        $where = [
-            'SERVICE wikibase:label { bd:serviceParam wikibase:language "ro" . }', // using  the labeling service
-            'VALUES ?typesOfCounties { wd:Q1776764 wd:Q10864048 }', // judet or first-level admin country subdiv
-            'VALUES ?typesOfTowns { wd:Q15921300 wd:Q640364 wd:Q659103 wd:Q16858213 } .' . // sector/municipiu/oras/comuna
-            '?county wdt:P131* wd:Q218', // located in the administrative territory of Romania
-            '?county wdt:P31 ?typesOfCounties', // instance of judet or first-level admin country subdiv
-            '{?county wdt:P150 ?town} UNION {?county wdt:P1383 ?town}', // should contain admin territorial entity or settlement
-            '?town wdt:P31 ?typesOfTowns', // sector/municipiu/oras/comuna
+        $select = [
+            '?countySirutaId', // we allways need the siruta ids for request chunking purposes
         ];
+
+        $where = [
+            // https://www.wikidata.org/wiki/Wikidata:SPARQL_query_service/query_optimization
+            'hint:Query  hint:optimizer "None"', // disable the optimiser
+            'SERVICE wikibase:label { bd:serviceParam wikibase:language "ro" . }', // using  the labeling service
+        ];
+
+        if ($countySirutaFilter !== null) {
+            $where = array_merge(
+                $where,
+                [
+                    '?county wdt:P843 "' . $countySirutaFilter . '"', // filter by county siruta id
+                    self::TYPES_OF_TOWNS_QUERY, // should contain admin territorial entity or settlement
+                    '?town wdt:P1383 ?sate', // towns contain villages
+                    self::COUNTY_SIRUTA_ID_QUERY, // always retrieve the siruta id of counties
+                ]
+            );
+        } else {
+            $where = array_merge(
+                $where,
+                [
+                    'VALUES ?typesOfCounties { wd:Q1776764 wd:Q10864048 }',// judet or first-level admin country subdiv
+                    'VALUES ?typesOfTowns { wd:Q15921300 wd:Q640364 wd:Q659103 wd:Q16858213 } .' . // sector/municipiu/oras/comuna
+                    '?county wdt:P131* wd:Q218',// located in the administrative territory of Romania
+                    self::TYPES_OF_TOWNS_QUERY,// should contain admin territorial entity or settlement
+                    self::COUNTY_SIRUTA_ID_QUERY,// county siruta id
+                    '?county wdt:P31 ?typesOfCounties',// instance of judet or first-level admin country subdiv
+                    '?town wdt:P31 ?typesOfTowns',// sector/municipiu/oras/comuna
+                ]
+            );
+        }
 
         foreach ($params as $param) {
             switch ($param) {
@@ -31,12 +58,6 @@ class WikiDataConverter
                         $select [] = '?typesOfCountiesLabel';
                     }
                 break;
-                case UatSeeder::FLAG_JUDETE_SIRUTA:
-                    {
-                        $select [] = '?countySirutaId';
-                        $where [] = 'OPTIONAL { ?county wdt:P843 ?countySirutaId .}'; // county should have a sirutaId
-                    }
-                break;
                 case UatSeeder::FLAG_UAT:
                     {
                         $select [] = '?townLabel';
@@ -45,12 +66,6 @@ class WikiDataConverter
                 case UatSeeder::FLAG_UAT_TYPE:
                     {
                         $select [] = '?typesOfTownsLabel';
-                    }
-                break;
-                case UatSeeder::FLAG_SIRUTA:
-                    {
-                        $select [] = '?sirutaId';
-                        $where [] = 'OPTIONAL { ?town wdt:P843 ?sirutaId .}';
                     }
                 break;
                 case UatSeeder::FLAG_COORDS:
@@ -65,16 +80,27 @@ class WikiDataConverter
                         $where [] = 'OPTIONAL { ?town wdt:P856 ?website .}';
                     }
                 break;
+                case UatSeeder::FLAG_SIRUTA:
+                    {
+                        $select [] = '?sirutaId';
+                        $where [] = 'OPTIONAL { ?town wdt:P843 ?sirutaId .}';
+                    }
+                break;
                 case UatSeeder::FLAG_SATE:
-                {
-                    $select [] = '?sateLabel';
-                    $where []= 'OPTIONAL { ?town wdt:P1383 ?village .}';
-                }
+                    {
+                        $select [] = '?sateLabel';
+                    }
                 break;
                 case UatSeeder::FLAG_SATE_COORDS:
                     {
                         $select [] = '?sateCoords';
-                        $where []= 'OPTIONAL { ?village wdt:P625 ?sateCoords .}';
+                        $where [] = 'OPTIONAL { ?sate wdt:P625 ?sateCoords .}';
+                    }
+                break;
+                case UatSeeder::FLAG_SATE_SIRUTA:
+                    {
+                        $select [] = '?sateSirutaId';
+                        $where [] = 'OPTIONAL { ?sate wdt:P843 ?sateSirutaId .}';
                     }
                 break;
             }
@@ -103,6 +129,12 @@ class WikiDataConverter
     public function mapData(array $data, array $mapping)
     {
         foreach ($data as $key => $item) {
+            foreach ($item as $sparqlKey => $value) {
+                if (!in_array($sparqlKey, array_keys($mapping))) {
+                    // Item was not requested
+                    unset($data[$key][$sparqlKey]);
+                }
+            }
             foreach ($mapping as $from => $to) {
                 if (isset($item[$from])) {
                     $var = $item[$from];

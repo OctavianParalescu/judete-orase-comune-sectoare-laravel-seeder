@@ -17,7 +17,7 @@ class WikiDataConverterTest extends TestCase
         $object = new WikiDataConverter();
         $query = $object->buildQuery($params);
 
-        $expected = 'SELECT DISTINCT ?countyLabel ?countySirutaId WHERE { SERVICE wikibase:label { bd:serviceParam wikibase:language "ro" . } .VALUES ?typesOfCounties { wd:Q1776764 wd:Q10864048 } .VALUES ?typesOfTowns { wd:Q15921300 wd:Q640364 wd:Q659103 wd:Q16858213 } .?county wdt:P131* wd:Q218 .?county wdt:P31 ?typesOfCounties .{?county wdt:P150 ?town} UNION {?county wdt:P1383 ?town} .?town wdt:P31 ?typesOfTowns .OPTIONAL { ?county wdt:P843 ?countySirutaId .} }';
+        $expected = 'SELECT DISTINCT ?countySirutaId ?countyLabel WHERE { hint:Query  hint:optimizer "None" .SERVICE wikibase:label { bd:serviceParam wikibase:language "ro" . } .VALUES ?typesOfCounties { wd:Q1776764 wd:Q10864048 } .VALUES ?typesOfTowns { wd:Q15921300 wd:Q640364 wd:Q659103 wd:Q16858213 } .?county wdt:P131* wd:Q218 .{?county wdt:P150 ?town} UNION {?county wdt:P1383 ?town} .OPTIONAL { ?county wdt:P843 ?countySirutaId .} .?county wdt:P31 ?typesOfCounties .?town wdt:P31 ?typesOfTowns }';
 
         $this->assertEquals($expected, $query);
     }
@@ -29,7 +29,7 @@ class WikiDataConverterTest extends TestCase
         $object = new WikiDataConverter();
         $query = $object->buildQuery($params);
 
-        $expected = 'SELECT DISTINCT ?countyLabel ?countySirutaId ?townLabel WHERE { SERVICE wikibase:label { bd:serviceParam wikibase:language "ro" . } .VALUES ?typesOfCounties { wd:Q1776764 wd:Q10864048 } .VALUES ?typesOfTowns { wd:Q15921300 wd:Q640364 wd:Q659103 wd:Q16858213 } .?county wdt:P131* wd:Q218 .?county wdt:P31 ?typesOfCounties .{?county wdt:P150 ?town} UNION {?county wdt:P1383 ?town} .?town wdt:P31 ?typesOfTowns .OPTIONAL { ?county wdt:P843 ?countySirutaId .} }';
+        $expected = 'SELECT DISTINCT ?countySirutaId ?countyLabel ?townLabel WHERE { hint:Query  hint:optimizer "None" .SERVICE wikibase:label { bd:serviceParam wikibase:language "ro" . } .VALUES ?typesOfCounties { wd:Q1776764 wd:Q10864048 } .VALUES ?typesOfTowns { wd:Q15921300 wd:Q640364 wd:Q659103 wd:Q16858213 } .?county wdt:P131* wd:Q218 .{?county wdt:P150 ?town} UNION {?county wdt:P1383 ?town} .OPTIONAL { ?county wdt:P843 ?countySirutaId .} .?county wdt:P31 ?typesOfCounties .?town wdt:P31 ?typesOfTowns }';
 
         $this->assertEquals($expected, $query);
     }

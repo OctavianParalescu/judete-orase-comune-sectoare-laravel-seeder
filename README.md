@@ -72,6 +72,18 @@ class CountiesSeeder extends OctavianParalescu\UatSeeder\UatSeeder
         $insertChunkSize = 500;
 
         $this->seed($table, $mapping, $insertChunkSize);
+
+        $this->seed(
+            'sate',
+            [
+                'countySirutaId' => 'county_id',
+                'sirutaId' => 'city_id',
+                'sateLabel' => 'name',
+                'sateCoords' => 'coords',
+            ],
+            500
+        );
+
     }
 }
 ```
@@ -86,6 +98,9 @@ typesOfTownsLabel - enum{comună, municipiu, oraș, sector al Bucureștiului}
 sirutaId - int (town siruta id)
 coords - string (format: Point(lat, long))
 website - string
+sateLabel - string
+sateCoords - string (format: Point(lat, long))
+sateSirutaId - int (village siruta id)
 ```
 ## ToDo:
 - split coords to Lat/Long

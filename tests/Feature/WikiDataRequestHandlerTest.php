@@ -1,67 +1,65 @@
 <?php
 
 
-namespace OctavianParalescu\UatSeeder;
+namespace Tests\Feature;
 
 
-use GuzzleHttp\Client;
+use OctavianParalescu\UatSeeder\UatSeeder;
+use OctavianParalescu\UatSeeder\WikiDataRequestHandler;
+use PHPUnit\Framework\TestCase;
 
-class WikiDataRequestHandler
+class WikiDataRequestHandlerTest extends TestCase
 {
-    const WIKIDATA_URL = 'https://query.wikidata.org/sparql?format=json';
 
-    public function retrieveWikiDataResults(string $sparqlQuery)
+    public function testShouldOnlyRetrieveJudeteQuery()
     {
-        $fileCache = __DIR__ . DIRECTORY_SEPARATOR . md5($sparqlQuery) . '.cache';
-        if (file_exists($fileCache)) {
-            return json_decode(file_get_contents($fileCache), true);
-        }
+        $params = [UatSeeder::FLAG_JUDETE, UatSeeder::FLAG_JUDETE_SIRUTA];
 
-        $url = self::WIKIDATA_URL;
+        $object = new WikiDataRequestHandler();
 
-        $client = new Client();
-        $headers = [
-            'accept-encoding' => 'gzip, deflate',
-        ];
+        $query = 'SELECT DISTINCT ?countyLabel ?countySirutaId WHERE { SERVICE wikibase:label { bd:serviceParam wikibase:language "ro" . } .VALUES ?typesOfAdministrations { wd:Q1776764 wd:Q10864048 } .?county wdt:P131* wd:Q218 .?county wdt:P31 ?typesOfAdministrations .{?county wdt:P150 ?town} UNION {?county wdt:P1383 ?town} .OPTIONAL { ?county wdt:P843 ?countySirutaId .} }';
 
-        if (strlen($sparqlQuery) > 2000) {
-            // Post request for larger queries
-            $formParams = [
-                'query' => $sparqlQuery,
-            ];
-            $options = [
-                'headers' => $headers,
-                'form_params' => $formParams,
-            ];
-            $response = $client->request(
-                'POST',
-                $url,
-                $options
-            );
-        } else {
-            // Get request
-            $queryString = http_build_query(
-                [
-                    'query' => $sparqlQuery,
-                ]
-            );
-            $url .= "&$queryString";
-            $options = [
-                'headers' => $headers,
-            ];
-            $response = $client->request(
-                'GET',
-                $url,
-                $options
-            );
-        }
+        $result = $object->retrieveWikiDataResults($query);
 
-        $body = ($response)->getBody();
+        $this->assertArrayHasKey('head', $result);
+        $this->assertArrayHasKey('results', $result);
+        $this->assertArrayHasKey('bindings', $result['results']);
+        $this->assertCount(42, $result['results']['bindings']); // 42 total counties
+    }
 
-        file_put_contents($fileCache, $body);
+    public function testShouldOnlyRetrieveJudeteAndOraseComune()
+    {
+        $params = [UatSeeder::FLAG_JUDETE, UatSeeder::FLAG_JUDETE_SIRUTA, UatSeeder::FLAG_UAT];
 
-        $data = json_decode($body, true);
+        $object = new WikiDataRequestHandler();
 
-        return $data;
+        $query = 'SELECT DISTINCT ?countyLabel ?countySirutaId ?townLabel WHERE { SERVICE wikibase:label { bd:serviceParam wikibase:language "ro" . } .VALUES ?typesOfAdministrations { wd:Q1776764 wd:Q10864048 } .?county wdt:P131* wd:Q218 .?county wdt:P31 ?typesOfAdministrations .{?county wdt:P150 ?town} UNION {?county wdt:P1383 ?town} .OPTIONAL { ?county wdt:P843 ?countySirutaId .} }';
+
+        $result = $object->retrieveWikiDataResults($query);
+
+        $this->assertArrayHasKey('head', $result);
+        $this->assertArrayHasKey('results', $result);
+        $this->assertArrayHasKey('bindings', $result['results']);
+        $this->assertEquals(3186, count($result['results']['bindings'])); // 3186 uats without judete and bucharest
+    }
+
+    public function testOptimisedVsNonOptimised()
+    {
+        $params = [UatSeeder::FLAG_JUDETE, UatSeeder::FLAG_JUDETE_SIRUTA];
+
+        $object = new WikiDataRequestHandler();
+
+        $queryOptimised = 'SELECT DISTINCT ?countyLabel ?countySirutaId WHERE { SERVICE wikibase:label { bd:serviceParam wikibase:language "ro" . } .VALUES ?typesOfAdministrations { wd:Q1776764 wd:Q10864048 } .?county wdt:P131* wd:Q218 .?county wdt:P31 ?typesOfAdministrations .{?county wdt:P150 ?town} UNION {?county wdt:P1383 ?town} .OPTIONAL { ?county wdt:P843 ?countySirutaId .} }';
+        $queryNonOptimised = 'SELECT DISTINCT ?countyLabel ?countySirutaId WHERE { hint:Query hint:optimizer "None" . SERVICE wikibase:label { bd:serviceParam wikibase:language "ro" . } .VALUES ?typesOfAdministrations { wd:Q1776764 wd:Q10864048 } .?county wdt:P131* wd:Q218 .?county wdt:P31 ?typesOfAdministrations .{?county wdt:P150 ?town} UNION {?county wdt:P1383 ?town} .OPTIONAL { ?county wdt:P843 ?countySirutaId .} }';
+
+        $startOptimised = microtime(true);
+        $resultOptimised = $object->retrieveWikiDataResults($queryOptimised, false);
+        $durationOptimised = microtime(true) - $startOptimised;
+
+        $startNonOptimised = microtime(true);
+        $resultNonOptimised = $object->retrieveWikiDataResults($queryNonOptimised, false);
+        $durationNonOptimised = microtime(true) - $startNonOptimised;
+
+        $this->assertLessThan($durationOptimised, $durationNonOptimised);
     }
 }
