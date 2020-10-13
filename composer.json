@@ -22,7 +22,7 @@
         "php": ">=7",
         "illuminate/support": ">=4.1.0",
         "ext-json": "*",
-        "guzzlehttp/guzzle": "^6.2"
+        "guzzlehttp/guzzle": ">=6.2"
     },
     "autoload": {
         "psr-0": {
