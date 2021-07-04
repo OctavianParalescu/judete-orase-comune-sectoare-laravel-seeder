@@ -146,6 +146,11 @@ class WikiDataConverter
                         break;
                     }
 
+                    if (!is_string($to)) {
+                        $var = $to['function']($var);
+                        $to = $to['name'];
+                    }
+
                     $data[$key][$to] = $var;
                     if ($from !== $to) {
                         unset($data[$key][$from]);
