@@ -75,7 +75,8 @@ class UatSeeder extends Seeder
      * @param string $table
      * @param array  $mapping
      * @param int    $insertChunkSize
-     * @param        $countiesDatum
+     * @param bool   $useCache
+     * @param        $countySiruta
      *
      * @throws \Exception
      */
